@@ -92,5 +92,5 @@ flowchart LR
 
 - **`campaign-api`**: canary com `trafficRouting.nginx` — o Argo Rollouts pesa o tráfego HTTP real entre a versão estável e a nova via Ingress.
 - **`donation-worker`**: canary **por réplica**, sem `trafficRouting` — não tem Ingress (só consome fila), então o peso é aproximado pela proporção de pods novos vs antigos.
-- Não há `AnalysisTemplate` automatizada (decisão registrada em [`conexao-solidaria-infra/infra/argo-rollouts/README.md`](https://github.com/marcarinivinicius/conexao-solidaria-infra/blob/main/infra/argo-rollouts/README.md)): a promoção entre os degraus do canary é manual (`kubectl argo rollouts promote`), não há métrica de erro automatizada decidindo por conta própria — o ambiente não tem Datadog, que é a integração usada no exemplo de referência interno.
+- Não há `AnalysisTemplate` automatizada (decisão registrada em [`conexao-solidaria-infra/infra/argo-rollouts/README.md`](https://github.com/marcarinivinicius/conexao-solidaria-infra/blob/main/infra/argo-rollouts/README.md)): a promoção entre os degraus do canary é manual (`kubectl argo rollouts promote`), sem métrica de erro automatizada decidindo por conta própria.
 - Nenhum `kubectl apply` direto no cluster faz parte do fluxo normal de deploy — só o merge do PR no `conexao-solidaria-infra`.
