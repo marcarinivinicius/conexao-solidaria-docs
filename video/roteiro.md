@@ -3,6 +3,12 @@
 Checklist direto do que o enunciado do hackathon exige mostrar — grave
 nessa ordem, sem ler código linha a linha.
 
+**Antes de gravar**: rode
+[`conexao-solidaria-infra/scripts/seed-demo-data.sh`](https://github.com/marcarinivinicius/conexao-solidaria-infra/blob/main/scripts/seed-demo-data.sh)
+por alguns minutos (`DURATION_SECONDS=180` ou mais) — gera campanhas,
+doadores e um fluxo real de doações via API, deixando os painéis do
+Grafana e o RabbitMQ com dados de verdade em vez de vazios/planos.
+
 - [ ] **1. Diagrama de arquitetura** (2 min) — abrir
       [`architecture/diagrama.md`](../architecture/diagrama.md) e explicar
       os 4 repositórios, o fluxo assíncrono da doação e onde entra o
