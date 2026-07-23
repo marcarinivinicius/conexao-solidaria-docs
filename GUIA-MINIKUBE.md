@@ -170,13 +170,13 @@ tem um `Ingress` (`nginx`) com hostname fixo em
 exige editar o hosts file do sistema com permissão de administrador, por
 isso não é o caminho default do guia.
 
-Depois que o Zabbix web estiver acessível, rode o script de setup do
+Com os port-forwards do passo 9 no ar, rode o script de setup do
 `conexao-solidaria-infra` pra criar os hosts/items que o dashboard do
 Grafana espera:
 
 ```bash
 cd conexao-solidaria-infra
-ZABBIX_URL=$(minikube service zabbix-web -n conexao-solidaria --url) \
+ZABBIX_URL="http://localhost:8080" \
 CAMPAIGN_API_METRICS_URL="http://conexao-solidaria-campaign-api-svc-stable.conexao-solidaria.svc.cluster.local:8080/metrics" \
 ./zabbix/setup.sh
 ```
@@ -200,7 +200,7 @@ Problemas comuns:
 | `Rollout` travado num `setWeight` | Está esperando promoção manual (comportamento esperado — não tem `AnalysisTemplate` automatizada) | `kubectl argo rollouts promote <app> -n conexao-solidaria` |
 | `campaign-api`/`donation-worker` reiniciando | Postgres/RabbitMQ ainda não prontos | Confirmar que os pods da infra estão `Running` antes de registrar os `Application` no ArgoCD |
 | Painel "Containers Docker" vazio no Grafana | Node do Minikube não expõe `/var/run/docker.sock` (depende do driver) | Ver painel de HTTP requests (não depende disso) e usar `kubectl top pods` como evidência alternativa no vídeo |
-| Swagger/Grafana/RabbitMQ/ArgoCD não carregam | Se estiver usando `kubectl port-forward` em vez de `minikube service` (passo 9), ele fica preso ao processo do pod específico — qualquer substituição de pod (canary, `minikube stop`/`start`, restart) mata o forward em silêncio | Usar `minikube service <nome> -n <namespace> --url` (NodePort fixo, sobrevive à troca de pod). Se insistir em `port-forward`, rodar de novo o comando |
+| Swagger/Grafana/RabbitMQ/ArgoCD não carregam | `kubectl port-forward` (passo 9) fica preso ao processo do pod específico — qualquer substituição de pod (canary, `minikube stop`/`start`, restart) mata o forward em silêncio | Rodar `.\scripts\port-forward-all.ps1` (ou `.sh`) de novo — reinicia os 5 de uma vez |
 
 ## Alternativa via Docker Compose
 
