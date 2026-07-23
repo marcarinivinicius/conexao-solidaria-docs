@@ -21,4 +21,4 @@ assíncrona, Kubernetes e observabilidade (Zabbix + Grafana).
 | [`conexao-solidaria-shared`](https://github.com/marcarinivinicius/conexao-solidaria-shared) | Biblioteca compartilhada (cliente RabbitMQ) |
 | [`conexao-solidaria-campaign-api`](https://github.com/marcarinivinicius/conexao-solidaria-campaign-api) | API: auth JWT/RBAC, campanhas, doadores, painel público, doações |
 | [`conexao-solidaria-donation-worker`](https://github.com/marcarinivinicius/conexao-solidaria-donation-worker) | Worker consumidor de doações (RabbitMQ → Postgres) |
-| [`conexao-solidaria-infra`](https://github.com/marcarinivinicius/conexao-solidaria-infra) | Postgres, RabbitMQ, Zabbix, Grafana |
+| [`conexao-solidaria-infra`](https://github.com/marcarinivinicius/conexao-solidaria-infra) | Postgres, RabbitMQ, Zabbix, Grafana + repo GitOps (manifests, ArgoCD, Argo Rollouts) |
