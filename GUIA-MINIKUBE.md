@@ -133,15 +133,28 @@ Ingress).
 
 ## 9. Acessando cada serviço
 
-Via `minikube service` (abre o navegador direto) ou `kubectl port-forward`:
+Todo Service exposto é `NodePort` com porta fixa definida no próprio
+manifest (`nodePort:` nos arquivos em `infra/*/service.yaml` e
+`cluster/apps/services/campaign-api/service.yaml` + `infra/argocd/nodeport-service.yaml`
+pro ArgoCD). Isso é proposital: **evita depender de `kubectl port-forward`**,
+que fica preso ao processo do pod e cai toda vez que o pod é substituído
+(canary do Argo Rollouts, `minikube stop`/`start`, restart de container) —
+com NodePort a porta é do Service, sobrevive a qualquer troca de pod por
+baixo.
 
 ```bash
-minikube service conexao-solidaria-campaign-api-svc-stable -n conexao-solidaria   # Swagger da API
-minikube service rabbitmq -n conexao-solidaria                                     # RabbitMQ Management UI
-minikube service zabbix-web -n conexao-solidaria                                   # Zabbix web
-minikube service grafana -n conexao-solidaria                                      # Grafana (login admin/admin)
-kubectl -n argocd port-forward svc/argocd-server 8081:443                          # ArgoCD UI (https://localhost:8081)
+minikube service conexao-solidaria-campaign-api-svc-stable -n conexao-solidaria --url   # Swagger da API (NodePort 30081)
+minikube service rabbitmq -n conexao-solidaria --url                                     # RabbitMQ Management UI (NodePort 30672)
+minikube service zabbix-web -n conexao-solidaria --url                                   # Zabbix web (NodePort 30080)
+minikube service grafana -n conexao-solidaria --url                                      # Grafana, login admin/admin (NodePort 30300)
+kubectl apply -f infra/argocd/nodeport-service.yaml   # uma vez só
+minikube service argocd-server-nodeport -n argocd --url                                  # ArgoCD UI (NodePort 30443)
 ```
+
+`minikube service <nome> --url` só imprime a URL (`http://<minikube ip>:<nodePort>`)
+e não precisa ficar rodando em background — dá pra chamar de novo a
+qualquer momento, o endereço não muda. `kubectl port-forward` continua
+funcionando como alternativa manual, só não é mais o caminho recomendado.
 
 Depois que o Zabbix web estiver acessível, rode o script de setup do
 `conexao-solidaria-infra` pra criar os hosts/items que o dashboard do
@@ -173,6 +186,7 @@ Problemas comuns:
 | `Rollout` travado num `setWeight` | Está esperando promoção manual (comportamento esperado — não tem `AnalysisTemplate` automatizada) | `kubectl argo rollouts promote <app> -n conexao-solidaria` |
 | `campaign-api`/`donation-worker` reiniciando | Postgres/RabbitMQ ainda não prontos | Confirmar que os pods da infra estão `Running` antes de registrar os `Application` no ArgoCD |
 | Painel "Containers Docker" vazio no Grafana | Node do Minikube não expõe `/var/run/docker.sock` (depende do driver) | Ver painel de HTTP requests (não depende disso) e usar `kubectl top pods` como evidência alternativa no vídeo |
+| Swagger/Grafana/RabbitMQ/ArgoCD não carregam | Se estiver usando `kubectl port-forward` em vez de `minikube service` (passo 9), ele fica preso ao processo do pod específico — qualquer substituição de pod (canary, `minikube stop`/`start`, restart) mata o forward em silêncio | Usar `minikube service <nome> -n <namespace> --url` (NodePort fixo, sobrevive à troca de pod). Se insistir em `port-forward`, rodar de novo o comando |
 
 ## Alternativa via Docker Compose
 
