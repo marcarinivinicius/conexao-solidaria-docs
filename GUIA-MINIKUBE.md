@@ -133,47 +133,42 @@ Ingress).
 
 ## 9. Acessando cada serviço
 
-Cada serviço tem um `Ingress` próprio (`nginx`, mesmo controller que já
-faz o roteamento canary da `campaign-api`) com um hostname fixo — é o
-caminho recomendado, porque com **um único processo** (`minikube tunnel`)
-você acessa tudo, em vez de um `port-forward`/`minikube service` por
-serviço. E como o Ingress aponta pro Service (não pro pod), sobrevive a
-qualquer canary/restart de pod por baixo.
+Caminho recomendado: `kubectl port-forward`, via o script do repo
+`conexao-solidaria-infra` que sobe os 5 de uma vez (não precisa editar
+nada do Windows/hosts file nem permissão de administrador):
 
-1. Adicione os hostnames no hosts file (uma vez só) apontando pra
-   `127.0.0.1` — o `minikube tunnel` faz o roteamento local:
+```powershell
+# Windows
+.\scripts\port-forward-all.ps1
+Get-Job              # ver status
+Get-Job | Stop-Job   # derrubar todos
+```
 
-   ```
-   # C:\Windows\System32\drivers\etc\hosts (como Administrador) ou /etc/hosts no Linux/Mac
-   127.0.0.1  campaign-api.conexao-solidaria.local
-   127.0.0.1  grafana.conexao-solidaria.local
-   127.0.0.1  zabbix.conexao-solidaria.local
-   127.0.0.1  rabbitmq.conexao-solidaria.local
-   127.0.0.1  argocd.conexao-solidaria.local
-   ```
+```bash
+# Linux/Mac
+./scripts/port-forward-all.sh
+pkill -f "kubectl port-forward"   # derrubar todos
+```
 
-2. Deixe **um** terminal aberto com o tunnel (pede senha de admin/sudo —
-   é ele que faz a ponte do host pro container do node no driver `docker`):
+```
+Swagger:  http://localhost:8081/swagger
+Grafana:  http://localhost:3000 (admin/admin)
+Zabbix:   http://localhost:8080 (Admin/zabbix)
+RabbitMQ: http://127.0.0.1:15672
+ArgoCD:   https://localhost:8082
+```
 
-   ```bash
-   minikube tunnel
-   ```
+`port-forward` fica preso ao pod específico, não ao Service — toda vez
+que o pod atrás de um desses serviços é substituído (canary do Argo
+Rollouts, `minikube stop`/`start`, restart de container), a conexão cai
+em silêncio. Quando alguma URL parar de responder, é só rodar o script de
+novo.
 
-3. Acesse direto, sem porta:
-
-   ```
-   http://campaign-api.conexao-solidaria.local/swagger
-   http://grafana.conexao-solidaria.local           (login admin/admin)
-   http://zabbix.conexao-solidaria.local
-   http://rabbitmq.conexao-solidaria.local
-   https://argocd.conexao-solidaria.local
-   ```
-
-Se `minikube tunnel` não for uma opção (ex.: sem permissão de
-admin/sudo), cada Service continua exposto como `NodePort` também
-(`kubectl get svc -n conexao-solidaria` pra ver as portas) — `minikube
-service <nome> -n <namespace> --url` ou `kubectl port-forward` funcionam
-como alternativa, só que aí volta a precisar de um processo por serviço.
+Alternativa (avançada, não recomendada por padrão): cada serviço também
+tem um `Ingress` (`nginx`) com hostname fixo em
+`*.conexao-solidaria.local`, acessível via `minikube tunnel` — mas isso
+exige editar o hosts file do sistema com permissão de administrador, por
+isso não é o caminho default do guia.
 
 Depois que o Zabbix web estiver acessível, rode o script de setup do
 `conexao-solidaria-infra` pra criar os hosts/items que o dashboard do
