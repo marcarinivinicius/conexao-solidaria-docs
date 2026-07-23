@@ -28,8 +28,8 @@ Grafana e o RabbitMQ com dados de verdade em vez de vazios/planos.
          copiar o token JWT.
       2. **Criar campanha**: `POST /api/v1/campanhas` autenticado como
          `GestorONG`.
-      3. **Cadastro + login de doador**: `POST /api/v1/doadores` e depois
-         `POST /api/v1/doadores/login`.
+      3. **Cadastro + login de doador**: `POST /api/v1/auth/register/doador`
+         e depois `POST /api/v1/auth/login`.
       4. **Simular doação**: `POST /api/v1/doacoes` autenticado como
          `Doador` — mostrar o payload sendo enviado.
       5. **RabbitMQ Management UI**: abrir `http://localhost:15672` (ou a
