@@ -140,8 +140,8 @@ nada do Windows/hosts file nem permissão de administrador):
 ```powershell
 # Windows
 .\scripts\port-forward-all.ps1
-Get-Job              # ver status
-Get-Job | Stop-Job   # derrubar todos
+Get-Process kubectl                          # ver quais estao de pe
+Get-Process kubectl | Stop-Process -Force    # derrubar todos
 ```
 
 ```bash
@@ -152,6 +152,7 @@ pkill -f "kubectl port-forward"   # derrubar todos
 
 ```
 Swagger:  http://localhost:8081/swagger
+Scalar:   http://localhost:8081/scalar/v1
 Grafana:  http://localhost:3000 (admin/admin)
 Zabbix:   http://localhost:8080 (Admin/zabbix)
 RabbitMQ: http://127.0.0.1:15672
