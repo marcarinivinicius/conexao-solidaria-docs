@@ -133,37 +133,47 @@ Ingress).
 
 ## 9. Acessando cada serviço
 
-Todo Service exposto é `NodePort` com porta fixa definida no próprio
-manifest (`nodePort:` nos arquivos em `infra/*/service.yaml` e
-`cluster/apps/services/campaign-api/service.yaml` + `infra/argocd/nodeport-service.yaml`
-pro ArgoCD).
+Cada serviço tem um `Ingress` próprio (`nginx`, mesmo controller que já
+faz o roteamento canary da `campaign-api`) com um hostname fixo — é o
+caminho recomendado, porque com **um único processo** (`minikube tunnel`)
+você acessa tudo, em vez de um `port-forward`/`minikube service` por
+serviço. E como o Ingress aponta pro Service (não pro pod), sobrevive a
+qualquer canary/restart de pod por baixo.
 
-**Atenção se estiver no driver `docker` do Minikube (padrão no Windows/Mac,
-confira com `minikube profile list`)**: o node roda dentro de um container
-Docker isolado, então `<minikube ip>:<nodePort>` **não é alcançável direto
-do host** — precisa de um túnel (`minikube service` avisa isso
-explicitamente: *"Because you are using a Docker driver on windows, the
-terminal needs to be open to run it"*). Ou seja, um processo em foreground
-continua sendo necessário, igual ao `kubectl port-forward`. A diferença
-real é **o que dispara a queda**: o túnel do `minikube service` aponta pra
-porta do *Service* (estável), não pro pod, então ele só cai se você fechar
-o terminal ou reiniciar o Minikube — **não** cai a cada canary/restart de
-pod como acontecia com `port-forward` puro. Em Linux com driver `none`/`kvm2`,
-o NodePort costuma ser alcançável direto pelo IP do node, sem esse túnel.
+1. Adicione os hostnames no hosts file (uma vez só) apontando pra
+   `127.0.0.1` — o `minikube tunnel` faz o roteamento local:
 
-```bash
-minikube service conexao-solidaria-campaign-api-svc-stable -n conexao-solidaria --url   # Swagger da API (NodePort 30081)
-minikube service rabbitmq -n conexao-solidaria --url                                     # RabbitMQ Management UI (NodePort 30672)
-minikube service zabbix-web -n conexao-solidaria --url                                   # Zabbix web (NodePort 30080)
-minikube service grafana -n conexao-solidaria --url                                      # Grafana, login admin/admin (NodePort 30300)
-kubectl apply -f infra/argocd/nodeport-service.yaml   # uma vez só
-minikube service argocd-server-nodeport -n argocd --url                                  # ArgoCD UI (NodePort 30443)
-```
+   ```
+   # C:\Windows\System32\drivers\etc\hosts (como Administrador) ou /etc/hosts no Linux/Mac
+   127.0.0.1  campaign-api.conexao-solidaria.local
+   127.0.0.1  grafana.conexao-solidaria.local
+   127.0.0.1  zabbix.conexao-solidaria.local
+   127.0.0.1  rabbitmq.conexao-solidaria.local
+   127.0.0.1  argocd.conexao-solidaria.local
+   ```
 
-Cada comando acima mantém o terminal ocupado (é o túnel rodando) — deixe
-uma aba/terminal aberto por serviço, ou rode em background. `kubectl
-port-forward` continua funcionando como alternativa equivalente, mas exige
-restart manual a cada substituição de pod.
+2. Deixe **um** terminal aberto com o tunnel (pede senha de admin/sudo —
+   é ele que faz a ponte do host pro container do node no driver `docker`):
+
+   ```bash
+   minikube tunnel
+   ```
+
+3. Acesse direto, sem porta:
+
+   ```
+   http://campaign-api.conexao-solidaria.local/swagger
+   http://grafana.conexao-solidaria.local           (login admin/admin)
+   http://zabbix.conexao-solidaria.local
+   http://rabbitmq.conexao-solidaria.local
+   https://argocd.conexao-solidaria.local
+   ```
+
+Se `minikube tunnel` não for uma opção (ex.: sem permissão de
+admin/sudo), cada Service continua exposto como `NodePort` também
+(`kubectl get svc -n conexao-solidaria` pra ver as portas) — `minikube
+service <nome> -n <namespace> --url` ou `kubectl port-forward` funcionam
+como alternativa, só que aí volta a precisar de um processo por serviço.
 
 Depois que o Zabbix web estiver acessível, rode o script de setup do
 `conexao-solidaria-infra` pra criar os hosts/items que o dashboard do
