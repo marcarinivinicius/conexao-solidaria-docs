@@ -136,11 +136,20 @@ Ingress).
 Todo Service exposto é `NodePort` com porta fixa definida no próprio
 manifest (`nodePort:` nos arquivos em `infra/*/service.yaml` e
 `cluster/apps/services/campaign-api/service.yaml` + `infra/argocd/nodeport-service.yaml`
-pro ArgoCD). Isso é proposital: **evita depender de `kubectl port-forward`**,
-que fica preso ao processo do pod e cai toda vez que o pod é substituído
-(canary do Argo Rollouts, `minikube stop`/`start`, restart de container) —
-com NodePort a porta é do Service, sobrevive a qualquer troca de pod por
-baixo.
+pro ArgoCD).
+
+**Atenção se estiver no driver `docker` do Minikube (padrão no Windows/Mac,
+confira com `minikube profile list`)**: o node roda dentro de um container
+Docker isolado, então `<minikube ip>:<nodePort>` **não é alcançável direto
+do host** — precisa de um túnel (`minikube service` avisa isso
+explicitamente: *"Because you are using a Docker driver on windows, the
+terminal needs to be open to run it"*). Ou seja, um processo em foreground
+continua sendo necessário, igual ao `kubectl port-forward`. A diferença
+real é **o que dispara a queda**: o túnel do `minikube service` aponta pra
+porta do *Service* (estável), não pro pod, então ele só cai se você fechar
+o terminal ou reiniciar o Minikube — **não** cai a cada canary/restart de
+pod como acontecia com `port-forward` puro. Em Linux com driver `none`/`kvm2`,
+o NodePort costuma ser alcançável direto pelo IP do node, sem esse túnel.
 
 ```bash
 minikube service conexao-solidaria-campaign-api-svc-stable -n conexao-solidaria --url   # Swagger da API (NodePort 30081)
@@ -151,10 +160,10 @@ kubectl apply -f infra/argocd/nodeport-service.yaml   # uma vez só
 minikube service argocd-server-nodeport -n argocd --url                                  # ArgoCD UI (NodePort 30443)
 ```
 
-`minikube service <nome> --url` só imprime a URL (`http://<minikube ip>:<nodePort>`)
-e não precisa ficar rodando em background — dá pra chamar de novo a
-qualquer momento, o endereço não muda. `kubectl port-forward` continua
-funcionando como alternativa manual, só não é mais o caminho recomendado.
+Cada comando acima mantém o terminal ocupado (é o túnel rodando) — deixe
+uma aba/terminal aberto por serviço, ou rode em background. `kubectl
+port-forward` continua funcionando como alternativa equivalente, mas exige
+restart manual a cada substituição de pod.
 
 Depois que o Zabbix web estiver acessível, rode o script de setup do
 `conexao-solidaria-infra` pra criar os hosts/items que o dashboard do
